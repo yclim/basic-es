@@ -1,0 +1,98 @@
+---
+- name: Install libsemanage-python and dependencies
+  yum: name={{ item }} state=present
+  become: true
+  with_items:
+    - libsemanage-python
+    
+- name: Copy java
+  copy:
+    src={{ item }}
+    dest=/tmp/{{item}}
+    owner=root
+    group=root
+    mode=0700
+  become: true
+  with_items:
+    - jdk-8u144-linux-x64.rpm
+  
+
+    
+- name: Copy elasticstack rpm file
+  copy:
+    src={{ item.name }}-{{ es_version }}{{ item.suffix }}.rpm
+    dest=/tmp/{{ item.name }}-{{ es_version }}{{ item.suffix }}.rpm
+    owner=root
+    group=root
+    mode=0700
+  become: true
+  with_items:
+    - { name: elasticsearch, suffix: "" }
+    - { name: kibana, suffix: "-x86_64" }
+    - { name: logstash, suffix: "" }
+    - { name: filebeat, suffix: "-x86_64" }
+    
+- name: Install java 
+  yum: 
+    name=/tmp/{{ item }} 
+    state=present
+  become: true
+  with_items:
+   - jdk-8u144-linux-x64.rpm  
+
+    
+- name: Install elasticstack 
+  yum: 
+    name=/tmp/{{ item.name }}-{{ es_version }}{{ item.suffix }}.rpm
+    state=present
+  become: true
+  with_items:
+   - { name: elasticsearch, suffix: "" }
+   - { name: kibana, suffix: "-x86_64" }
+   - { name: logstash, suffix: "" }
+   - { name: filebeat, suffix: "-x86_64" }
+   
+- name: Copy config template
+  template:
+    src={{ item }}.yml
+    dest=/etc/{{ item }}/{{ item }}.yml
+    mode=0644
+  become: true
+  with_items:
+    - elasticsearch
+    - kibana
+    - logstash
+    - filebeat
+    
+- name: Copy logstash pipeline config
+  template:
+    src={{ item }}
+    dest=/etc/logstash/conf.d/{{ item }}
+    mode=0644
+  become: true
+  with_items:
+    - pipeline.conf
+    
+- name: Ensures kibana log folder exist
+  file: 
+    path=/var/log/kibana 
+    state=directory
+    owner=kibana
+    group=kibana
+  become: true
+    
+- name: systemd daemon reload
+  systemd: daemon_reload=yes    
+  become: true
+  
+- name: Start elasticstack
+  systemd: 
+    name={{ item }}
+    enabled=yes
+    state=started
+  become: true
+  
+  with_items:
+    - elasticsearch
+    - kibana
+#    - logstash

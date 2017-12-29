@@ -1,0 +1,7 @@
+Download the following and place in this directory
+
+- elasticsearch-6.1.1.rpm
+- filebeat-6.1.1-x86_64.rpm
+- kibana-6.1.1-x86_64.rpm
+- logstash-6.1.1.rpm.rpm
+- jdk-8u144-linux-x64.rpm
